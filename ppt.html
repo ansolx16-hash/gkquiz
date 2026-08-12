@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our World - Interactive Presentation</title>
+    <style>
+        :root {
+            --bg-dark: #05070a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --text-main: #f8fafc;
+            --text-sub: #cbd5e1;
+            --team-a: #ef4444;
+            --team-b: #3b82f6;
+            --team-c: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 15% 10%, rgba(56,189,248,0.06), transparent 40%),
+                radial-gradient(circle at 85% 90%, rgba(129,140,248,0.06), transparent 40%);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #progress-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.08); z-index: 1000;
+        }
+        #progress-bar {
+            height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            transition: width 0.35s ease;
+        }
+
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px 60px 70px 60px; opacity: 0; visibility: hidden;
+            transform: translateY(8px);
+            transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+            overflow-y: auto;
+        }
+        .slide.active { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .container { max-width: 1400px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+
+        /* INCREASED FONT SIZES & SPACING BELOW */
+        
+        .tag {
+            font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; color: var(--accent-blue);
+            text-transform: uppercase; margin-bottom: 10px;
+        }
+
+        h1.main-title {
+            font-size: clamp(5rem, 10vw, 9rem);
+            font-weight: 900;
+            letter-spacing: -3px;
+            line-height: 1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 15px; color: #fff; letter-spacing: -0.5px; }
+
+        p.desc { font-size: 1.3rem; line-height: 1.6; color: var(--text-sub); margin-bottom: 24px; background: rgba(255,255,255,0.02); padding: 18px 24px; border-radius: 10px; border-left: 4px solid var(--accent-purple); }
+
+        ul.facts { list-style: none; margin: 10px 0 0 0; }
+        ul.facts li { font-size: 1.15rem; line-height: 1.6; color: #e2e8f0; margin-bottom: 10px; position: relative; padding-left: 24px; }
+        ul.facts li::before { content: "❖"; position: absolute; left: 0; color: var(--accent-blue); font-size: 1rem; top: 4px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-top: 10px; }
+        .grid.three { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 24px 28px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            flex-grow: 1;
+        }
+        .card h3 { color: var(--accent-blue); font-size: 1.4rem; margin-bottom: 12px; font-weight: 700; }
+        .card p { font-size: 1.15rem; line-height: 1.6; color: var(--text-sub); margin-bottom: 0; }
+        .card .stat { display: inline-block; font-weight: 800; color: #fff; font-size: 1.25rem; margin-right: 4px; }
+
+        .made-by { font-size: 1.3rem; letter-spacing: 6px; color: var(--accent-purple); font-weight: 800; text-transform: uppercase; text-align: center; margin-top: 10px; }
+
+        /* SLIDE COUNTER */
+        #slide-counter {
+            position: fixed; bottom: 24px; left: 40px; z-index: 1000;
+            font-size: 0.9rem; color: var(--text-sub); letter-spacing: 1px; font-weight: 600;
+            background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* QUIZ INTRO */
+        .quiz-title-big {
+            font-size: clamp(4rem, 11vw, 10rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        /* QUIZ STYLING */
+        .scoreboard {
+            display: flex; gap: 30px; background: rgba(255,255,255,0.04); padding: 10px 25px;
+            border-radius: 50px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 14px; width: fit-content;
+        }
+        .score-team { font-weight: 800; font-size: 1.2rem; }
+        .team-a { color: var(--team-a); }
+        .team-b { color: var(--team-b); }
+        .team-c { color: var(--team-c); }
+
+        .q-progress {
+            font-size: 1.1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-sub);
+            text-transform: uppercase; margin-bottom: 10px;
+        }
+
+        .options-list { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; width: 100%; }
+
+        .option-card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            padding: 20px 24px; border-radius: 12px; display: flex; flex-direction: column; gap: 14px;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, opacity 0.25s ease, filter 0.25s ease;
+        }
+        .option-title { font-size: 1.3rem; font-weight: 700; color: #fff; }
+
+        .team-choices { display: flex; gap: 10px; width: 100%; }
+        .choice-btn {
+            flex: 1; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+            background: #0f172a; color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.18s;
+            text-align: center;
+        }
+        .choice-btn:hover { background: #1e293b; transform: translateY(-1px); }
+        .choice-btn.selected-A { background: var(--team-a); border-color: var(--team-a); box-shadow: 0 0 10px rgba(239,68,68,0.4); }
+        .choice-btn.selected-B { background: var(--team-b); border-color: var(--team-b); box-shadow: 0 0 10px rgba(59,130,246,0.4); }
+        .choice-btn.selected-C { background: var(--team-c); border-color: var(--team-c); box-shadow: 0 0 10px rgba(16,185,129,0.4); }
+
+        .option-card.correct-answer { background: rgba(16, 185, 129, 0.15) !important; border-color: #10b981; border-width: 2px; transform: scale(1.02); }
+        .option-card.correct-answer .option-title { color: #34d399; }
+        .option-card.wrong-answer { opacity: 0.25; filter: grayscale(60%); transform: scale(0.99); }
+
+        .reveal-btn, .adv-btn {
+            margin-top: 24px; align-self: center; padding: 14px 40px; font-size: 1.2rem; font-weight: 800;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); border: none;
+            color: #fff; border-radius: 30px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+        .reveal-btn:hover, .adv-btn:hover { opacity: 0.95; transform: scale(1.03); }
+        .adv-btn { display: none; background: linear-gradient(90deg, #10b981, #38bdf8); }
+
+        .nav-controls {
+            position: fixed; bottom: 20px; right: 40px; display: flex; gap: 12px; z-index: 1000;
+        }
+        .nav-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;
+            font-size: 1rem;
+        }
+        .nav-btn:hover { background: var(--accent-blue); color: #000; }
+
+        @media (max-width: 720px) {
+            .slide { padding: 30px 22px 70px 22px; }
+            .options-list { grid-template-columns: 1fr; }
+            #slide-counter { left: 20px; bottom: 78px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="progress-container"><div id="progress-bar"></div></div>
+    <div id="slide-counter">1 / 1</div>
+
+    <div id="presentation">
+
+        <!-- SLIDE: TITLE COVER -->
+        <div class="slide active">
+            <div class="container" style="align-items: center; text-align: center;">
+                <h1 class="main-title">OUR WORLD</h1>
+                <div class="made-by">MADE BY FARHAN</div>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 1: CENTRAL BANKS ============ -->
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Section 1: Central Banks</div>
+                <h2>Understanding Central Banking Institutions</h2>
+                <p class="desc">A central bank is an independent national entity granted legal oversight over money production, interest rates, and national banking systems. Unlike retail banks, central banks do not interface with individual depositors; instead, they regulate liquidity, formulate national monetary policy, and act as official fiscal agents for national governments. Almost every sovereign country on Earth now operates one, and their combined decisions steer the flow of trillions of dollars every single day.</p>
+                <div class="grid three">
+                    <div class="card">
+                        <h3>Monetary Policy & Currency Control</h3>
+                        <p>Central banks control baseline interest rates to manage inflation and spur employment. They hold exclusive authority to print legal tender, regulate commercial currency circulation, and set mandatory bank reserve requirements to secure national economic stability.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Lender of Last Resort</h3>
+                        <p>During severe financial panics and liquidity crunches, central banks supply emergency short-term funding directly to solvent commercial institutions to prevent credit freezes, widespread corporate bankruptcies, and systemic bank runs.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Supervision & Financial Stability</h3>
+                        <p>Beyond interest rates, most central banks supervise commercial lenders directly - running stress tests, enforcing capital requirements, and monitoring the broader financial system for bubbles, fraud, and contagion risk before they spiral.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Central Banks</div>
+                <h2>The United States Federal Reserve System</h2>
+                <p class="desc">Established under the Federal Reserve Act of <b>1913</b> following severe banking panics, "The Fed" is an independent entity built to separate long-term monetary stability from short-term political influence. Its policy decisions ripple directly across every international market on Earth, making Federal Reserve meetings some of the most closely watched events in global finance.</p>
+                <div class="grid three">
+                    <div class="card">
+                        <h3>Structure & The Dual Mandate</h3>
+                        <p>Guided by a 7-member Board of Governors in Washington, D.C. and <span class="stat"><b>12</b></span> regional Federal Reserve Banks. Unlike central banks focused solely on price inflation, the Fed is legally bound to achieve both <b>maximum sustainable employment</b> and long-term price stability.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Global Reserve Dominance</h3>
+                        <p>Because over <span class="stat">58%</span> of global foreign exchange reserves are held in US Dollars ($), Federal Open Market Committee (FOMC) interest rate benchmarks dictate international borrowing expenses, commodity pricing, and global asset valuations instantly.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Quantitative Easing (QE)</h3>
+                        <p>When rate cuts alone aren't enough, the Fed buys huge volumes of government bonds and mortgage securities to pump liquidity directly into the economy - a tool used heavily during the 2008 crisis and the 2020 pandemic.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Central Banks</div>
+                <h2>European Central Bank & Bank of England</h2>
+                <p class="desc">Europe hosts two of the world's most influential central monetary authorities. The European Central Bank executes unified monetary policy for an entire multi-nation union, while the Bank of England stands as a historical pioneer of modern central banking, having shaped how the entire discipline is practiced today.</p>
+                <div class="grid three">
+                    <div class="card">
+                        <h3>European Central Bank (ECB)</h3>
+                        <p>Headquartered in <b>Frankfurt, Germany</b>. Founded in 1998, the ECB directs monetary policy for 20 sovereign Eurozone nations utilizing the Euro (€). Its primary legal mandate is strict price stability, targeting inflation rates close to 2% across the bloc.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Bank of England (BoE)</h3>
+                        <p>Founded in 1694, it is nicknamed "<b>Old Lady of Threadneedle Street</b>." It transitioned from a private joint-stock corporation to full public nationalization in <b>1946</b>, overseeing the issuance and regulation of the British Pound Sterling (£).</p>
+                    </div>
+                    <div class="card">
+                        <h3>Swiss National Bank (SNB)</h3>
+                        <p>Uniquely, the SNB is a publicly traded company with private shareholders alongside cantonal governments. It manages the Swiss Franc, long viewed as a safe-haven currency during periods of European economic turbulence.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Central Banks</div>
+                <h2>Central Banks of Asia's Giants</h2>
+                <p class="desc">Asia's largest economies rely on central banks with very different philosophies - from aggressive deflation-fighting to tightly managed currency bands to powering the world's biggest digital payments network.</p>
+                <div class="grid three">
+                    <div class="card">
+                        <h3>Bank of Japan (BoJ)</h3>
+                        <p>World-famous for maintaining <b>zero and negative interest rate</b> frameworks for decades to aggressively combat long-term domestic deflation - a strategy almost no other major central bank has attempted at this scale.</p>
+                    </div>
+                    <div class="card">
+                        <h3>People's Bank of China (PBOC)</h3>
+                        <p>Manages the Yuan using a <b>daily reference band</b> system rather than a fully free-floating rate, allowing Beijing to steer exchange rate volatility, protect domestic manufacturing, and encourage international trade settlement.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Reserve Bank of India (RBI)</h3>
+                        <p>Regulates the Rupee while also overseeing <b>UPI</b>, the real-time payments rail that now processes more transactions monthly than most Western card networks combined.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Central Banks</div>
+                <h2>Central Bank Digital Currencies (CBDCs)</h2>
+                <p class="desc">A growing wave of central banks are building official, government-backed digital versions of their currencies - distinct from cryptocurrencies because they are centrally issued and fully controlled by the state.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Why Central Banks Want Them</h3>
+                        <ul class="facts">
+                            <li>Faster, cheaper domestic and cross-border payments</li>
+                            <li>Greater financial inclusion for unbanked populations</li>
+                            <li>Tighter oversight of money laundering and fraud</li>
+                            <li>A state-backed alternative to private cryptocurrencies</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Notable Examples</h3>
+                        <p>China's digital Yuan (e-CNY) is already piloted across dozens of cities. The Bahamas launched the "Sand Dollar," one of the world's first live CBDCs. The ECB and Bank of England have both run extensive digital Euro and digital Pound research programs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Central Banks</div>
+                <h2>Independence, Politics & Controversy</h2>
+                <p class="desc">Central banks are designed to sit above day-to-day politics, but the tension between political leaders and monetary authorities is one of the oldest fights in economics.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Why Independence Matters</h3>
+                        <p>Elected governments often prefer low interest rates to boost short-term growth before elections, even if it fuels long-term inflation. Independent central banks are shielded from this pressure so they can make unpopular but necessary decisions, like raising rates during a boom.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Real-World Friction</h3>
+                        <p>Central bank leaders are regularly criticized by presidents and prime ministers for "moving too slow" or "too fast." Turkey's repeated central bank leadership changes and pressure campaigns are a frequently cited modern example of independence being tested.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 2: CURRENCIES OF ASIA ============ -->
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Section 2: Currencies of Asia</div>
+                <h2>Overview of Asian Currency Markets</h2>
+                <p class="desc">Asia represents the world's primary manufacturing, export, and technological powerhouse. Its currency dynamics reflect a complex framework of managed exchange rates, massive export-driven domestic economies, floating valuations, and critical international reserve holdings that make the region a bellwether for global trade health.</p>
+                <div class="grid three">
+                    <div class="card">
+                        <h3>Industrial Manufacturing Hubs</h3>
+                        <p>Currencies such as the Chinese Yuan and South Korean Won fluctuate closely alongside international trade demand, semiconductor supply chain pricing, and heavy industrial component export cycles across global corridors.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Safe-Haven & Emerging Power</h3>
+                        <p>The Japanese Yen serves as an international funding currency and safe-haven asset during global distress, while the Indian Rupee anchors the world's fastest-growing major domestic market driven by cutting-edge digital payments.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Managed vs Floating Regimes</h3>
+                        <p>Not all Asian currencies float freely - many governments actively intervene, buying or selling their own currency to keep exports competitive and avoid the kind of sudden shocks that triggered past regional crises.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Currencies of Asia</div>
+                <h2>Japanese Yen & Chinese Yuan</h2>
+                <p class="desc">Japan and China operate the two largest economic forces in Asia, utilizing distinct exchange rate mechanisms and monetary strategies to navigate global trade competition and domestic growth objectives.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Japanese Yen (JPY - ¥)</h3>
+                        <p>Adopted during the 1871 Meiji Modernization. The Yen is the third most traded currency worldwide. The Bank of Japan is world-famous for maintaining zero and negative interest rate frameworks to aggressively combat long-term domestic deflation.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Chinese Yuan / Renminbi (CNY - ¥)</h3>
+                        <p>Officially named the <b>Renminbi</b> ("People's Currency"). Managed by the People's Bank of China (PBOC) using a daily reference band system to regulate exchange rate volatility, protect domestic manufacturing, and encourage international trade settlements.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Currencies of Asia</div>
+                <h2>Indian Rupee, South Korean Won & Thai Baht</h2>
+                <p class="desc">These key currencies anchor major industrial, technological, and consumer markets across South and Southeast Asia, demonstrating high economic resilience and rapid technological integration.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Indian Rupee (INR - ₹) & Won (KRW)</h3>
+                        <p>The word Rupee derives from the Sanskrit <i>Rupya</i>, meaning <b>wrought silver</b>. Regulated by the Reserve Bank of India, processing massive real-time digital transaction volumes via <b>UPI</b>. The South Korean official currency is the <b>Won</b>, managed by the Bank of Korea and sensitive to tech cycles.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Thai Baht (THB - ฿)</h3>
+                        <p>Issued by the Bank of Thailand. Consistently rated as one of Southeast Asia's most stable currencies, supported by substantial foreign exchange reserves, thriving agricultural exports, and massive international tourism sector inflows.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Currencies of Asia</div>
+                <h2>Southeast Asia's Rising Currencies</h2>
+                <p class="desc">Beyond the region's giants, a second tier of fast-growing Southeast Asian economies runs currencies shaped by trade hubs, commodity exports, and rapid digital-first financial systems.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Singapore Dollar (SGD - $)</h3>
+                        <p>Managed by the Monetary Authority of Singapore (MAS), which uniquely uses <b>the exchange rate itself</b> - not interest rates - as its main monetary policy tool, given how small and trade-dependent the city-state's economy is.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Indonesian Rupiah & Vietnamese Dong</h3>
+                        <p>Indonesia's Rupiah is one of the highest face-value currencies in daily use anywhere in the world. Vietnam's Dong, managed under a tightly controlled crawling peg, has helped keep the country's export-driven manufacturing boom remarkably stable.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Currencies of Asia</div>
+                <h2>Lessons from the 1997 Asian Financial Crisis</h2>
+                <p class="desc">One event still shapes how Asian central banks manage currency risk today: the 1997 crisis, when currency pegs collapsed across the region almost overnight.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>What Happened</h3>
+                        <p><b>Thailand's decision to float the Baht</b> in July 1997, after months of speculative pressure, triggered a domino effect. The Baht, Won, Rupiah, and other regional currencies lost enormous value within weeks, forcing emergency IMF bailouts.</p>
+                    </div>
+                    <div class="card">
+                        <h3>The Legacy Today</h3>
+                        <p>The crisis pushed Asian nations to build up massive foreign exchange reserves as a buffer, favor more flexible exchange rate regimes, and pursue deeper regional cooperation - all still visible in how these central banks operate today.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 3: GEOPOLITICS (BRICS) ============ -->
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Section 3: Geopolitics</div>
+                <h2>BRICS: Coalition Foundation & Objectives</h2>
+                <p class="desc">Originally coined by <b>Goldman Sachs</b> economist Jim O'Neill in 2001 as an investment acronym for emerging markets, BRIC evolved into an official diplomatic geopolitical alliance in <b>2009</b> to challenge traditional Western financial hegemony and give fast-growing economies a louder voice on the world stage.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Original Core Founders & NDB</h3>
+                        <p><b>B</b>razil, <b>R</b>ussia, <b>I</b>ndia, <b>C</b>hina, and <b>S</b>outh Africa (which added the 'S' in 2010). They established the New Development Bank (NDB) in <b>Shanghai, China</b> in 2014 with $100 billion in capital as an alternative to the World Bank and IMF.</p>
+                    </div>
+                    <div class="card">
+                        <h3>De-Dollarization Strategy</h3>
+                        <p>BRICS actively expands bilateral cross-border settlements using national local currencies to bypass traditional US dollar clearing networks, reduce sanction vulnerabilities, and protect members from foreign exchange volatility.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Geopolitics</div>
+                <h2>BRICS Historic Expansions (2024–2025)</h2>
+                <p class="desc">The alliance recently executed massive structural expansions, inviting strategic global energy producers and key economic hubs to reshape global trade corridors, resource ownership, and maritime transportation routes.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>2024 Enlargement Integration</h3>
+                        <p>Egypt, Ethiopia, Iran, and the United Arab Emirates officially joined as full voting members (while <b>Mexico</b> did not join), significantly consolidating the group's control over Middle Eastern energy reserves and key African trade corridors.</p>
+                    </div>
+                    <div class="card">
+                        <h3>2025 Full Accession</h3>
+                        <p><b>Indonesia</b> officially completed full membership accession in January 2025, adding Southeast Asia's largest economy, vital mineral reserves, and major population center to the expanding economic bloc.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Geopolitics</div>
+                <h2>Inside the New Development Bank</h2>
+                <p class="desc">The NDB is BRICS' flagship financial institution - built to fund infrastructure and sustainable development projects without the political conditions often attached to Western-led lending.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>How It Operates</h3>
+                        <ul class="facts">
+                            <li>Headquartered in <b>Shanghai, China</b></li>
+                            <li>Each founding member holds equal voting power, unlike the IMF's weighted system</li>
+                            <li>Funds energy, transport, water, and digital infrastructure projects</li>
+                            <li>Increasingly lends in local currencies instead of US dollars</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Why It Matters</h3>
+                        <p>By offering an alternative source of development financing, the NDB gives emerging economies more negotiating leverage and reduces reliance on institutions historically dominated by the United States and Western Europe.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Geopolitics</div>
+                <h2>Criticisms & Internal Challenges</h2>
+                <p class="desc">Despite its rapid growth, BRICS faces real structural tension - member states don't always agree, and a single unified "BRICS currency" remains far from reality.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Internal Divisions</h3>
+                        <p>India and China have an ongoing border dispute and deep strategic rivalry, making full political alignment difficult. Members also range from democracies to authoritarian states, complicating consensus on major decisions.</p>
+                    </div>
+                    <div class="card">
+                        <h3>The "BRICS Currency" Myth</h3>
+                        <p>Despite frequent headlines, BRICS has not launched a shared single currency. Current efforts focus on practical local-currency trade settlement systems rather than a Euro-style common currency, which would require far deeper economic integration.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 4: MICRO-NATIONS ============ -->
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Section 4: Micro-Nations</div>
+                <h2>World's Smallest Sovereign Nations</h2>
+                <p class="desc">Sovereignty is defined by political authority rather than physical landmass. Sovereign micro-nations exercise complete constitutional authority, field distinct tax codes, and manage specialized international diplomatic relationships inside miniature geographical borders.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>1. Vatican City (0.49 km²)</h3>
+                        <p>The smallest independent nation in the world by area. Located entirely within Rome, Italy. Governed as an absolute elective monarchy headed by the Pope, it officially uses the <b>Euro</b> currency.</p>
+                    </div>
+                    <div class="card">
+                        <h3>2. Monaco (2.0 km²)</h3>
+                        <p>Situated along the French Riviera in Western Europe. Famous for levying zero personal income tax, attracting ultra-wealthy residents, hosting elite casinos, and organizing the prestigious Formula 1 Monaco Grand Prix.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Micro-Nations</div>
+                <h2>Pacific Island Micro-Nations</h2>
+                <p class="desc">Isolated Pacific micro-nations manage unique economic strategies dictated by distant geographic realities, limited industrial land space, and creative digital domain monetization.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>3. Nauru (21 km²)</h3>
+                        <p>Located in Micronesia in the Central Pacific. Nauru is the smallest island nation on Earth. Once boasting the world's highest per-capita GDP through intensive <b>phosphate</b> mining, it now utilizes the Australian Dollar and operates without a formal capital city.</p>
+                    </div>
+                    <div class="card">
+                        <h3>4. Tuvalu (26 km²)</h3>
+                        <p>A Polynesian island country composed of low-lying reef atolls. <b>Tuvalu</b> converted its assigned country-code Internet domain suffix (<b>.tv</b>) into a lucrative revenue stream by licensing domain rights to major online video platforms worldwide.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Micro-Nations</div>
+                <h2>Europe's Historic Micro-States</h2>
+                <p class="desc">Tucked between larger powers, a handful of tiny European states have survived for centuries by carving out specialized economic niches.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>5. San Marino (61 km²)</h3>
+                        <p>Perched on Mount Titano in Italy, San Marino claims to be the world's oldest surviving <b>republic</b>, founded in 301 AD. It runs a banking-and-tourism economy and uses the Euro despite not being an EU member.</p>
+                    </div>
+                    <div class="card">
+                        <h3>6. Liechtenstein (160 km²)</h3>
+                        <p>A doubly landlocked microstate between Switzerland and Austria. It uses the Swiss Franc and has built one of the world's highest GDP-per-capita economies through banking, precision manufacturing, and low corporate taxes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Micro-Nations</div>
+                <h2>Compact of Free Association Nations</h2>
+                <p class="desc">Several small Pacific nations maintain full sovereignty while holding a unique treaty relationship with the United States, shaping both their currency and their defense policy.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Palau & The Marshall Islands</h3>
+                        <p>Both nations are independent UN members but officially use the <b>US Dollar</b> as their currency under a "Compact of Free Association," which also grants the US military basing rights in exchange for economic assistance and defense guarantees.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Why This Model Exists</h3>
+                        <p>Adopting the Dollar removes currency risk for these tiny, import-dependent economies, while the Compact provides a steady flow of US federal funding far larger than what their own tax bases could generate.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 5: TRIVIA ============ -->
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Section 5: Trivia</div>
+                <h2>Chain of Facts: Financial Secrets</h2>
+                <p class="desc">Fascinating historical anomalies, monetary quirks, and unique legal setups that define the hidden corners of global economics.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Underground Gold Vault</h3>
+                        <p>The Federal Reserve Bank of New York holds over 6,000 tons of gold bullion in an underground vault built directly on Manhattan bedrock. Roughly <b>98%</b> belongs to foreign governments relying on US security.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Latin Language ATMs & Polymer Notes</h3>
+                        <p>Vatican City's central financial institution offers automated teller machines with operational choices written in classical <b>Latin</b>. Meanwhile, <b>Australia</b> pioneered plastic polymer banknotes in 1988 to prevent forgery and extend note lifespan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Trivia</div>
+                <h2>Chain of Facts: Curiosities</h2>
+                <p class="desc">Additional strange reality facts from across international boundaries and sovereign legal structures.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>Landed Expansion & Bilateral Pegs</h3>
+                        <p>Due to severe land shortages, Monaco has expanded its territory by over 20% through <b>coastal sea reclamation</b>. Additionally, <b>Bhutan</b> accepts Indian Rupees side-by-side with its official Ngultrum at a fixed 1:1 exchange rate.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Rai Stone Currency</h3>
+                        <p>On the island of Yap, massive circular carved limestone disks called <b>Rai stones</b> were historically used as physical currency without ever being physically moved during ownership transfers; everyone in the village simply remembered the new owner.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="container">
+                <div class="tag">Trivia</div>
+                <h2>Chain of Facts: Record Breakers</h2>
+                <p class="desc">A final round of extremes - the biggest, strangest, and most short-lived monetary records in history.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>The Largest Banknote Ever</h3>
+                        <p>In 2008, amid hyperinflation, <b>Zimbabwe</b> printed a 100-trillion-dollar note - worth only a few US dollars at the time - now a famous cautionary collector's item about the dangers of uncontrolled money printing.</p>
+                    </div>
+                    <div class="card">
+                        <h3>The World's Oldest Paper Money</h3>
+                        <p><b>China</b> issued the world's first government-backed paper currency, "Jiaozi," during the Song Dynasty around the 11th century - centuries before paper money reached Europe.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ QUIZ INTRO ============ -->
+
+        <div class="slide">
+            <div class="container" style="align-items: center; text-align: center;">
+                <div class="tag">Hope u all r ready for a quiz cuz its</div>
+                <h1 class="quiz-title-big">QUIZ TIME!</h1>
+                <div class="scoreboard" style="font-size: 1.5rem; padding: 15px 40px; margin: 30px auto 0 auto;">
+                    <span class="score-team team-a">Team A: <span id="score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span id="score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span id="score-C">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ QUIZ QUESTIONS ============ -->
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What year was the US Federal Reserve established?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) 1803</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) 1913</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) 1945</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) 1998</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Where is the European Central Bank (ECB) headquartered?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Paris, France</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Brussels, Belgium</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Frankfurt, Germany</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) London, UK</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What is the formal name of China's official currency?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Renminbi</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Ringgit</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Baht</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Won</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>The word "Rupee" comes from the Sanskrit "Rupya," meaning what?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Pure Gold</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Wrought Silver</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Stamped Paper</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) King's Crown</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which country added the letter "S" to BRIC in 2010?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Spain</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Singapore</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) South Africa</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Saudi Arabia</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which Southeast Asian nation joined BRICS in January 2025?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Thailand</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Indonesia</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Vietnam</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Malaysia</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What is the smallest independent nation in the world by area?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Vatican City</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Monaco</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Nauru</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Tuvalu</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which ocean island country earns significant revenue from its ".tv" domain?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Maldives</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Fiji</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Tuvalu</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Palau</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Where is the New Development Bank (NDB) headquartered?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) New Delhi, India</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Moscow, Russia</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Shanghai, China</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Brasilia, Brazil</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Vatican City ATMs offer instructions in what language?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Italian</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Latin</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) French</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Spanish</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which Himalayan nation keeps its currency pegged 1:1 with the Indian Rupee?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Bhutan</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Nepal</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Sri Lanka</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Bangladesh</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What percentage of gold in the NY Fed vault belongs to foreign states?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) 25%</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) 50%</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) 98%</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) 10%</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which country pioneered polymer (plastic) banknotes in 1988?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Canada</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Australia</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Japan</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) United Kingdom</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Monaco has expanded its land area by over 20% using what method?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Buying land from France</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Coastal Sea Reclamation</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Tunnels under Italy</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Floating Islands</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What is the official currency of South Korea?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Yen</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Yuan</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Won</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Ringgit</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>The Fed's "dual mandate" is price stability plus what other goal?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Trade surplus growth</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Maximum employment</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Currency devaluation</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Housing price growth</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>How many regional Federal Reserve Banks are there?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) 7</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) 9</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) 12</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) 15</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What is the Bank of England's famous nickname?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) The Golden Vault</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Old Lady of Threadneedle Street</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) The Iron Bank</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Crown Reserve House</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>The Bank of England was nationalized in what year?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) 1913</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) 1929</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) 1946</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) 1971</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>The Bank of Japan is famous for maintaining what kind of interest rates?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Extremely high rates</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Zero / negative rates</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Rates pegged to gold</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Rates set by the IMF</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>How does the PBOC primarily manage the Yuan's exchange rate?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) A daily reference band</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) A pure free float</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) A fixed gold standard</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) UN-set exchange rates</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What is India's massive real-time digital payments system called?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) SWIFT</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) FedNow</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) UPI</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Alipay</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>The term "BRIC" was originally coined in 2001 by an economist at which firm?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Goldman Sachs</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) JPMorgan</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) The World Bank</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) The United Nations</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>In what year did BRIC become an official diplomatic bloc?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) 2001</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) 2009</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) 2014</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) 2020</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which of these countries did NOT join BRICS in the 2024 enlargement?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Egypt</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Iran</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Mexico</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) UAE</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What currency does Vatican City officially use?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Vatican Lira</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Euro</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Swiss Franc</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) US Dollar</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Nauru's economy once boomed thanks to intensive mining of what resource?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Diamonds</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Oil</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Phosphate</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Copper</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>On the island of Yap, giant carved stone disks used as currency are called?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Moai Coins</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Rai Stones</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Wampum Discs</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Cowrie Wheels</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>San Marino claims to be the world's oldest surviving what?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Republic</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Monarchy</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Empire</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Trading Company</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="2">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Palau and the Marshall Islands both officially use which currency?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Australian Dollar</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Japanese Yen</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) US Dollar</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) New Zealand Dollar</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="3">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Amid hyperinflation in 2008, which country printed a 100-trillion-dollar note?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) Venezuela</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Weimar Germany</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Hungary</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Zimbabwe</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Which country issued "Jiaozi," the world's first government-backed paper money?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) India</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) China</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Persia</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Rome</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="0">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>Singapore's central bank uniquely uses what as its main policy tool?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) The exchange rate itself</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Interest rates</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Gold reserves</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) Tariffs</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <div class="slide quiz-slide" data-ans="1">
+            <div class="container">
+                <div class="scoreboard">
+                    <span class="score-team team-a">Team A: <span class="q-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span class="q-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span class="q-score-C">0</span></span>
+                </div>
+                <div class="q-progress">Question <span class="q-num"></span> of <span class="q-total"></span></div>
+                <h2>What triggered the 1997 Asian Financial Crisis's first wave of collapse?</h2>
+                <div class="options-list">
+                    <div class="option-card" data-opt="0"><div class="option-title">A) China floating the Yuan</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="1"><div class="option-title">B) Thailand floating the Baht</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="2"><div class="option-title">C) Japan raising rates</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                    <div class="option-card" data-opt="3"><div class="option-title">D) A US banking collapse</div><div class="team-choices"><button class="choice-btn" onclick="selectTeamOpt(this, 'A')">Team A</button><button class="choice-btn" onclick="selectTeamOpt(this, 'B')">Team B</button><button class="choice-btn" onclick="selectTeamOpt(this, 'C')">Team C</button></div></div>
+                </div>
+                <button class="reveal-btn" onclick="revealAnswer(this)">Reveal Answer</button>
+                <button class="adv-btn" onclick="nextSlide()">Next Question ►</button>
+            </div>
+        </div>
+
+        <!-- FINAL SCORE SLIDE -->
+        <div class="slide">
+            <div class="container" style="align-items: center; text-align: center;">
+                <div class="tag">Quiz Complete</div>
+                <h2>FINAL SCOREBOARD</h2>
+                <p class="desc" style="max-width: 600px; margin: 0 auto; text-align: center;"> Here are the final scores:</p>
+                <div class="scoreboard" style="font-size: 2rem; padding: 25px 60px; margin: 25px auto 0 auto;">
+                    <span class="score-team team-a">Team A: <span id="final-score-A">0</span></span>
+                    <span class="score-team team-b">Team B: <span id="final-score-B">0</span></span>
+                    <span class="score-team team-c">Team C: <span id="final-score-C">0</span></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">◄ Prev</button>
+        <button class="nav-btn" onclick="nextSlide()">Next ►</button>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+
+        // Label quiz question progress once, up front (cheap, avoids per-frame work)
+        const quizSlides = document.querySelectorAll('.quiz-slide');
+        quizSlides.forEach((s, i) => {
+            const numEl = s.querySelector('.q-num');
+            const totEl = s.querySelector('.q-total');
+            if (numEl) numEl.textContent = i + 1;
+            if (totEl) totEl.textContent = quizSlides.length;
+        });
+
+        function updateSlide() {
+            slides.forEach((slide, idx) => {
+                slide.classList.toggle('active', idx === currentSlide);
+            });
+            const progress = (currentSlide / (slides.length - 1)) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('slide-counter').textContent = `${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        updateSlide();
+
+        // QUIZ ENGINE
+        let scores = { A: 0, B: 0, C: 0 };
+
+        function selectTeamOpt(btn, team) {
+            const slide = btn.closest('.quiz-slide');
+            if (slide.dataset.revealed) return;
+
+            slide.querySelectorAll(`.choice-btn.selected-${team}`).forEach(b => {
+                b.classList.remove(`selected-${team}`);
+            });
+            btn.classList.add(`selected-${team}`);
+        }
+
+        function revealAnswer(btn) {
+            const slide = btn.closest('.quiz-slide');
+            if (slide.dataset.revealed) return;
+            slide.dataset.revealed = "true";
+
+            const correctIdx = parseInt(slide.dataset.ans);
+            const options = slide.querySelectorAll('.option-card');
+
+            options.forEach((card, idx) => {
+                if (idx === correctIdx) {
+                    card.classList.add('correct-answer');
+                } else {
+                    card.classList.add('wrong-answer');
+                }
+            });
+
+            ['A', 'B', 'C'].forEach(team => {
+                const selectedBtn = slide.querySelector(`.choice-btn.selected-${team}`);
+                if (selectedBtn) {
+                    const chosenCard = selectedBtn.closest('.option-card');
+                    const chosenIdx = parseInt(chosenCard.dataset.opt);
+                    if (chosenIdx === correctIdx) {
+                        scores[team] += 1;
+                    }
+                }
+            });
+
+            updateScores();
+            btn.style.display = 'none';
+            const advBtn = slide.querySelector('.adv-btn');
+            if (advBtn) advBtn.style.display = 'inline-block';
+        }
+
+        function updateScores() {
+            ['A', 'B', 'C'].forEach(t => {
+                document.querySelectorAll(`.q-score-${t}`).forEach(el => el.textContent = scores[t]);
+                const mainScore = document.getElementById(`score-${t}`);
+                const finalScore = document.getElementById(`final-score-${t}`);
+                if (mainScore) mainScore.textContent = scores[t];
+                if (finalScore) finalScore.textContent = scores[t];
+            });
+        }
+    </script>
+</body>
+</html>
